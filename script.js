@@ -1,122 +1,7 @@
-Function.prototype.bind = Function.prototype.bind || function (target) {
-    var self = this;
-    return function (args) {
-      if (!(args instanceof Array)) {
-        args = [args];
-      }
-      self.apply(target, args);
-    };
-  };
-  (function () {
-    if (typeof window.Element === "undefined" ||
-        "classList" in document.documentElement) {
-      return;
-    }
-  
-    var prototype = Array.prototype,
-        push = prototype.push,
-        splice = prototype.splice,
-        join = prototype.join;
-  
-    function DOMTokenList(el) {
-      this.el = el;
-      // The className needs to be trimmed and split on whitespace
-      // to retrieve a list of classes.
-      var classes = el.className.replace(/^\s+|\s+$/g, '').split(/\s+/);
-      for (var i = 0; i < classes.length; i++) {
-        push.call(this, classes[i]);
-      }
-    }
-  
-    DOMTokenList.prototype = {
-      add: function (token) {
-        if (this.contains(token)) return;
-        push.call(this, token);
-        this.el.className = this.toString();
-      },
-      contains: function (token) {
-        return this.el.className.indexOf(token) != -1;
-      },
-      item: function (index) {
-        return this[index] || null;
-      },
-      remove: function (token) {
-        if (!this.contains(token)) return;
-        for (var i = 0; i < this.length; i++) {
-          if (this[i] == token) break;
-        }
-        splice.call(this, i, 1);
-        this.el.className = this.toString();
-      },
-      toString: function () {
-        return join.call(this, ' ');
-      },
-      toggle: function (token) {
-        if (!this.contains(token)) {
-          this.add(token);
-        } else {
-          this.remove(token);
-        }
-  
-        return this.contains(token);
-      }
-    };
-  
-    window.DOMTokenList = DOMTokenList;
-  
-    function defineElementGetter(obj, prop, getter) {
-      if (Object.defineProperty) {
-        Object.defineProperty(obj, prop, {
-          get: getter
-        });
-      } else {
-        obj.__defineGetter__(prop, getter);
-      }
-    }
-  
-    defineElementGetter(HTMLElement.prototype, 'classList', function () {
-      return new DOMTokenList(this);
-    });
-  })();
-  (function() {
-    var lastTime = 0;
-    var vendors = ['webkit', 'moz'];
-    for(var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
-      window.requestAnimationFrame = window[vendors[x]+'RequestAnimationFrame'];
-      window.cancelAnimationFrame =
-      window[vendors[x]+'CancelAnimationFrame'] || window[vendors[x]+'CancelRequestAnimationFrame'];
-    }
-  
-    if (!window.requestAnimationFrame) {
-      window.requestAnimationFrame = function(callback, element) {
-        var currTime = new Date().getTime();
-        var timeToCall = Math.max(0, 16 - (currTime - lastTime));
-        var id = window.setTimeout(function() { callback(currTime + timeToCall); },
-        timeToCall);
-        lastTime = currTime + timeToCall;
-        return id;
-      };
-    }
-  
-    if (!window.cancelAnimationFrame) {
-      window.cancelAnimationFrame = function(id) {
-        clearTimeout(id);
-      };
-    }
-  }());
-  function KeyboardInputManager() {
+Function KeyboardInputManager() {
     this.events = {};
   
-    if (window.navigator.msPointerEnabled) {
-      //Internet Explorer 10 style
-      this.eventTouchstart    = "MSPointerDown";
-      this.eventTouchmove     = "MSPointerMove";
-      this.eventTouchend      = "MSPointerUp";
-    } else {
-      this.eventTouchstart    = "touchstart";
-      this.eventTouchmove     = "touchmove";
-      this.eventTouchend      = "touchend";
-    }
+    
   
     this.listen();
   }
@@ -145,7 +30,6 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
       39: 1, // Right
       40: 2, // Down
       37: 3, // Left
-
       87: 0, // W
       68: 1, // D
       83: 2, // S
@@ -166,11 +50,6 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
           event.preventDefault();
           self.emit("move", mapped);
         }
-      }
-  
-      // R key restarts the game
-      if (!modifiers && event.which === 82) {
-        self.restart.call(self, event);
       }
     });
   
@@ -294,10 +173,6 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
   
   // Continues the game (both restart and keep playing)
   HTMLActuator.prototype.continueGame = function () {
-    if (typeof ga !== "undefined") {
-      ga("send", "event", "game", "restart");
-    }
-  
     this.clearMessage();
   };
   
@@ -307,11 +182,9 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
     }
   };
   
-  //HTMLActuator.prototype.tileHTML = ["菜鸟", "入门", "码畜", "码奴", "码农", "IT民工", "IT工程师", "IT人才", "IT精英", "IT大哥", "IT领袖"];
-  HTMLActuator.prototype.tileHTML = ["2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "2048"];
-  //HTMLActuator.prototype.tileHTML = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "win"];
-  //HTMLActuator.prototype.tileHTML = ["工兵", "班长", "排长", "连长", "营长", "团长", "旅长", "师长", "军长", "司令", "军旗"];
-  
+
+  HTMLActuator.prototype.tileHTML = ["2", "4", "8", "16", "32", "64", "128", "256", "512", "1024", "2048", "4096"];
+ 
   HTMLActuator.prototype.addTile = function (tile) {
     var self = this;
   
@@ -394,16 +267,8 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
     var type    = won ? "game-won" : "game-over";
     var message = won ? "You Win!" : "Game Over!";
   
-    if (typeof ga !== "undefined") {
-      ga("send", "event", "game", "end", type, this.score);
-    }
-  
     this.messageContainer.classList.add(type);
     this.messageContainer.getElementsByTagName("p")[0].textContent = message;
-  
-    this.clearContainer(this.sharingContainer);
-    this.sharingContainer.appendChild(this.scoreTweetButton());
-    //twttr.widgets.load();
   };
   
   HTMLActuator.prototype.clearMessage = function () {
@@ -411,22 +276,7 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
     this.messageContainer.classList.remove("game-won");
     this.messageContainer.classList.remove("game-over");
   };
-  
-  HTMLActuator.prototype.scoreTweetButton = function () {
-    var tweet = document.createElement("a");
-    tweet.classList.add("twitter-share-button");
-    tweet.setAttribute("href", "https://twitter.com/share");
-    tweet.setAttribute("data-via", "gabrielecirulli");
-    tweet.setAttribute("data-url", "https://git.io/2048");
-    tweet.setAttribute("data-counturl", "https://gabrielecirulli.github.io/2048/");
-    tweet.textContent = "Tweet";
-  
-    var text = "I scored " + this.score + " points at 2048, a game where you " +
-               "join numbers to score high! #2048game";
-    tweet.setAttribute("data-text", text);
-  
-    return tweet;
-  };
+  /* Game board*/
   function Grid(size, previousState) {
     this.size = size;
     this.cells = previousState ? this.fromState(previousState) : this.empty();
@@ -590,7 +440,7 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
       return this._data = {};
     }
   };
-  
+  //luu game trc đó
   function LocalStorageManager() {
     this.bestScoreKey     = "bestScore";
     this.gameStateKey     = "gameState";
@@ -649,20 +499,20 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
     this.setup();
   }
   
-  // Restart the game
+  // Restart trò chơi
   GameManager.prototype.restart = function () {
     this.storageManager.clearGameState();
-    this.actuator.continueGame(); // Clear the game won/lost message
+    this.actuator.continueGame(); // Xóa thông báo win/lose 
     this.setup();
   };
   
-  // Keep playing after winning (allows going over 2048)
+  // Cho phép tiếp tục chơi sau khi win 
   GameManager.prototype.keepPlaying = function () {
     this.keepPlaying = true;
-    this.actuator.continueGame(); // Clear the game won/lost message
+    this.actuator.continueGame(); // Xóa thông báo win/lose
   };
   
-  // Return true if the game is lost, or has won and the user hasn't kept playing
+  // Trả về giá trị true nếu game thua, hoặc false nếu người dùng thắng và không chơi tiếp
   GameManager.prototype.isGameTerminated = function () {
     if (this.over || (this.won && !this.keepPlaying)) {
       return true;
@@ -671,14 +521,14 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
     }
   };
   
-  // Set up the game
+  // setup trò chơi
   GameManager.prototype.setup = function () {
     var previousState = this.storageManager.getGameState();
   
-    // Reload the game from a previous game if present
+    // Tải lại trò chơi có sẵn trước đó, nếu có
     if (previousState) {
       this.grid        = new Grid(previousState.grid.size,
-                                  previousState.grid.cells); // Reload grid
+                                  previousState.grid.cells); // Tải lại lưới trò chơi
       this.score       = previousState.score;
       this.over        = previousState.over;
       this.won         = previousState.won;
@@ -690,22 +540,22 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
       this.won         = false;
       this.keepPlaying = false;
   
-      // Add the initial tiles
+      // thêm các ô ban đầu
       this.addStartTiles();
     }
   
-    // Update the actuator
+    //Cập nhật trạng thái
     this.actuate();
   };
   
-  // Set up the initial tiles to start the game with
+  // setup các ô ban đầu để thiết lập trò chơi
   GameManager.prototype.addStartTiles = function () {
     for (var i = 0; i < this.startTiles; i++) {
       this.addRandomTile();
     }
   };
   
-  // Adds a tile in a random position
+  // Thêm 1 ô 2 hoặc 4 vào vị trí ngẫu nhiên
   GameManager.prototype.addRandomTile = function () {
     if (this.grid.cellsAvailable()) {
       var value = Math.random() < 0.9 ? 2 : 4;
@@ -716,12 +566,13 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
   };
   
   // Sends the updated grid to the actuator
+  //Gửi lưới đã cập nhật tới thiết bị truyền động
   GameManager.prototype.actuate = function () {
     if (this.storageManager.getBestScore() < this.score) {
       this.storageManager.setBestScore(this.score);
     }
   
-    // Clear the state when the game is over (game over only, not win)
+    // Xóa trạng thái khi trò chơi kết thúc (game over only, not win)
     if (this.over) {
       this.storageManager.clearGameState();
     } else {
@@ -739,6 +590,7 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
   };
   
   // Represent the current game as an object
+  // Biểu diễn trò chơi hiện tại dưới dạng một đối tượng
   GameManager.prototype.serialize = function () {
     return {
       grid:        this.grid.serialize(),
@@ -766,7 +618,7 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
     tile.updatePosition(cell);
   };
   
-  // Move tiles on the grid in the specified direction
+  // Di chuyển các ô trên lưới theo hướng đã chỉ định
   GameManager.prototype.move = function (direction) {
     // 0: up, 1: right, 2: down, 3: left
     var self = this;
@@ -779,10 +631,10 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
     var traversals = this.buildTraversals(vector);
     var moved      = false;
   
-    // Save the current tile positions and remove merger information
+    // Lưu các vị trí ô hiện tại và xóa thông tin merger 
     this.prepareTiles();
   
-    // Traverse the grid in the right direction and move tiles
+    // Di chuyển lưới theo đúng hướng và di chuyển các ô
     traversals.x.forEach(function (x) {
       traversals.y.forEach(function (y) {
         cell = { x: x, y: y };
@@ -801,6 +653,7 @@ Function.prototype.bind = Function.prototype.bind || function (target) {
             self.grid.removeTile(tile);
   
             // Converge the two tiles' positions
+            //Hội tụ các vị trí của hai ô
             tile.updatePosition(positions.next);
   
             // Update the score
