@@ -1,8 +1,5 @@
 Function KeyboardInputManager() {
     this.events = {};
-  
-    
-  
     this.listen();
   }
   
